@@ -18,15 +18,5 @@ export default defineNuxtConfig({
       },
     ],
     renderer: {},
-  },
-  ui: {
-    // primary: 'blue',
-    // secondary: 'purple',
-    // warning: 'orange',
-    // error: 'red',
-    notifications: {
-      // Show toasts at the top right of the screen
-      position: 'top-0 right-0'
-    }
   }
 })

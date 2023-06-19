@@ -1,9 +1,9 @@
 <template>
   <div :style="{ width: width + 'px', height: height + 'px', top: top + 'px', left: left + 'px' }"
-    :class="isFullscreen ? 'fullscreen' : ''" :hidden="isHidden"
-    class="absolute border-2 border-transparent resize-y rounded-lg transition-colors p-2 hover:border-blue-600 hover:bg-opacity-10 hover:bg-blue-600"
-    >
-    <UCard class="w-full h-full bg-red-600" :class="isFullscreen ? 'rounded-none' : ''">
+    :class="isFullscreen ? 'fullscreen' : ''"  :hidden="isHidden"
+    class="absolute overflow-auto select-a border-2 border-transparent rounded-lg transition-colors p-2 hover:resize hover:border-blue-600 hover:bg-opacity-10 hover:bg-blue-600"
+    @resize="handleResize">
+    <UCard class="w-full h-full" :class="isFullscreen ? 'rounded-none' : ''">
       <template #header>
         <div class="flex items-center">
           <span class="flex-1" :class="dragging ? 'cursor-grabbing' : 'cursor-grab'" @mousedown="handleStart" @touchstart="handleStart">{{ title }}</span>
@@ -49,8 +49,8 @@ export default {
       top: 0,
       marginLeft: 0,
       marginTop: 0,
-      width: 300,
-      height: 300,
+      width: 600,
+      height: 400,
     }
   },
 
@@ -98,6 +98,13 @@ export default {
     },
     handleEnd(e) {
       if (this.dragging) this.dragging = false;
+    },
+    
+    handleResize(e) {
+      console.log(e.target)
+
+      this.width = e.target.width;
+      this.height = e.target.height;
     }
   },
 

@@ -35,11 +35,11 @@ const toast = useToast();
             </UFormGroup>
 
             <UFormGroup name="pan" label="Pan">
-              <UInput type="number" v-model.number="track.panNode.pan.value" step="0.1" min="-1" max="1"></UInput>
+              <input type="range" class="w-12" v-model.number="track.panNode.pan.value" step="0.1" min="-1" max="1" />
             </UFormGroup>
 
             <UFormGroup name="gain" label="Gain">
-              <UInput type="number" v-model.number="track.gainNode.gain.value" step="0.1" min="0" max="2"></UInput>
+              <input type="range" class="w-12" v-model.number="track.gainNode.gain.value" step="0.1" min="0" max="2" />
             </UFormGroup>
           </div>
         </li>
