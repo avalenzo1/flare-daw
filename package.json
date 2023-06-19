@@ -1,0 +1,26 @@
+{
+    "name": "nuxt-app",
+    "private": true,
+    "main": "dist-electron/main.js",
+    "scripts": {
+        "build": "nuxt build",
+        "dev": "nuxt dev",
+        "generate": "nuxt generate",
+        "preview": "nuxt preview",
+        "postinstall": "nuxt prepare"
+    },
+    "devDependencies": {
+        "@nuxt/devtools": "latest",
+        "@nuxthq/ui": "^2.4.0",
+        "@types/node": "^18",
+        "electron": "^25.1.1",
+        "electron-builder": "^24.4.0",
+        "nuxt": "^3.5.2",
+        "nuxt-electron": "^0.5.0",
+        "vite-plugin-electron": "^0.12.0",
+        "vite-plugin-electron-renderer": "^0.14.5"
+    },
+    "dependencies": {
+        "uuid": "^9.0.0"
+    }
+}
