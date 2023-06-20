@@ -10,6 +10,7 @@ export default defineAppConfig({
       position: 'top-0 right-0'
     },
     card: {
+      rounded: "rounded-none",
       header: {
         padding: "p-2"
       },
