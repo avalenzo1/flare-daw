@@ -98,6 +98,7 @@ class Track {
     else {
       console.log("heyyy")
       this.initializeBuffer();
+
       this.source.start(0);
     }
   }
@@ -191,6 +192,7 @@ class Flare {
     this.timeSignature = [4, 4];
     this.time = 0;
     this.bpm = 130; // 1000 * 60 / this.bpm
+    
   }
 
   async stop() {

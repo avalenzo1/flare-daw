@@ -1,0 +1,18 @@
+{
+    "title": "Project Title",
+    "bpm": 80,
+    "timeSignature": [4, 4],
+    "tracks": [{
+            "name": "Sample Track 1",
+            "type": "SampleTrack"
+        },
+        {
+            "name": "SF2 Plugin",
+            "type": "SF2Track"
+        },
+        {
+            "name": "VST Plugin",
+            "type": "VST3Track"
+        }
+    ]
+}

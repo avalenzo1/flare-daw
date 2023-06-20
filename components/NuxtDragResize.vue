@@ -1,10 +1,16 @@
 <template>
   <div :style="{ top: top + 'px', left: left + 'px' }"
-    class="absolute overflow-auto border-2 border-transparent rounded-lg transition-colors p-2 hover:resize hover:border-blue-600 hover:bg-opacity-10 hover:bg-blue-600"
+    class="nuxt-drag-resize"
     @resize="handleResize">
     <slot></slot>
   </div>
 </template>
+
+<style>
+.nuxt-drag-resize {
+  @apply absolute max-w-full overflow-auto rounded-lg transition-colors p-2 hover:border hover:resize hover:border-blue-600 hover:bg-opacity-10 hover:bg-blue-600;
+}
+</style>
 
 <script>
 // Yes this is a carbon copy of vue-drag-resize porque no sirve ese pm
@@ -37,10 +43,8 @@ export default {
       zIndex: 0,
       parentWidth: null,
       parentHeight: null,
-      left: null,
-      top: null,
-      right: null,
-      bottom: null,
+      left: this.x,
+      top: this.y,
       minHeight: this.minH,
 
       dragHandleEl: null
@@ -61,7 +65,8 @@ export default {
         this.startTop = e.touches[0].clientY;
       }
 
-      let boundingClientRect = e.target.getBoundingClientRect();
+      let boundingClientRect = e.target.closest('.nuxt-drag-resize').getBoundingClientRect();
+
 
       this.marginLeft = this.startLeft - boundingClientRect.x;
       this.marginTop = this.startTop - boundingClientRect.y;
@@ -86,12 +91,6 @@ export default {
     handleResize(e) {
       console.log(e.target)
     }
-  },
-
-  created() {
-    this.left = this.x;
-    this.top = this.y;
-    this.minHeight = this.minH;
   },
 
   beforeMount() {

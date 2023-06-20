@@ -1,9 +1,9 @@
 <template>
-  <NuxtDragResize dragHandle=".drag" :class="fullscreen ? 'u-card__fullscreen' : ''">
+  <NuxtDragResize dragHandle=".drag" :class="fullscreen ? 'u-card__fullscreen' : ''" :x="x" :y="y" :w="w" :h="h">
     <UCard class="w-full h-full">
       <template #header>
         <div class="flex items-center">
-          <span class="drag flex-1">{{ title }}</span>
+          <span class="drag flex-1 text-ellipsis line-clamp-1">{{ title }}</span>
           <UButtonGroup>
             <UButton :icon="fullscreen ? 'i-heroicons-arrows-pointing-in' : 'i-heroicons-arrows-pointing-out'"
               @click="toggleFullscreen" variant="soft" />
