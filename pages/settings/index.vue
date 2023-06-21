@@ -1,5 +1,8 @@
 <script setup>
-const colorMode = useColorMode()
+import { useMainStore } from '@/store/main.ts';
+
+const colorMode = useColorMode();
+const mainStore = useMainStore();
 
 const isDark = computed({
   get() {
@@ -23,9 +26,18 @@ const language = ref(languages[0])
     </UButton>
   </UFormGroup>
   
-
   <UFormGroup name="language" label="Language">
     <USelectMenu v-model="language" :options="languages" />
+  </UFormGroup>
+
+  <UFormGroup name="illegal" label="Illegal Plugins">
+    <UTooltip text="By enabling this option. Illegal Plugins will show up.">
+      <UButton color="gray" variant="ghost"
+    aria-label="Theme" @click="mainStore.updateSettings({ enableIllegalPlugins: !mainStore.settings.enableIllegalPlugins })">
+    {{ mainStore.settings.enableIllegalPlugins ? 'Enable Illegal Plugins' : 'Disable Illegal Plugins' }}
+    </UButton>
+  </UTooltip>
+    
   </UFormGroup>
   
 </template>

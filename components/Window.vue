@@ -1,6 +1,6 @@
 <template>
-  <NuxtDragResize dragHandle=".drag" :class="fullscreen ? 'u-card__fullscreen' : ''" :x="x" :y="y" :w="w" :h="h">
-    <UCard class="w-full h-full">
+  <NuxtDragResize dragHandle=".drag" :class="fullscreen ? 'u-card__fullscreen' : ''" :x="x" :y="y" :w="w" :h="h" :min-h="minH">
+    <UCard class="h-full">
       <template #header>
         <div class="flex items-center">
           <span class="drag flex-1 text-ellipsis line-clamp-1">{{ title }}</span>
@@ -30,16 +30,19 @@ export default {
       type: String,
       default: "Window Title"
     },
-    w: {
-      type: Number
-    },
-    h: {
-      type: Number
-    },
     x: {
       type: Number
     },
     y: {
+      type: Number
+    },
+    w: {
+      type: Number
+    },
+    minH: {
+      type: Number
+    },
+    h: {
       type: Number
     }
   },

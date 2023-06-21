@@ -21,7 +21,7 @@ definePageMeta({
       </UFormGroup>
     </div>
 
-    <div class="relative">
+    <div>
       <Window title="Editor">
         {{ flare.ctx.currentTime }}
         {{ state }}
@@ -62,7 +62,7 @@ definePageMeta({
         </ul>
       </Window>
 
-      <Window v-for="(track, i) in flare.tracks" :key="i + 1" :title="'Track Window ' + track.name" :w="300" :h="500"
+      <Window v-for="(track, i) in flare.tracks" :key="i + 1" :title="'Track Window ' + track.name" :w="400" :h="400"
         :x="400" :y="i * 100">
         <input type="range" :value="track.db * 80" disabled="true" />
       </Window>
@@ -71,7 +71,7 @@ definePageMeta({
 </template>
 
 <script lang="ts">
-import { Flare, SampleTrack } from '@/composables/flare.ts';
+import { Flare, SampleTrack } from '@/assets/flare';
 
 const toast = useToast();
 

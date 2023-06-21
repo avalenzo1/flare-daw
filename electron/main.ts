@@ -39,8 +39,10 @@ function bootstrap() {
     win.loadFile(path.join(process.env.VITE_PUBLIC!, 'index.html'))
   }
 
-  ipcMain.on('flare/open-project', (event, ignore, options) => {
-    dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'], filters: [{ name: 'JavaScript Object Notation', extensions: ['json'] }], })
+  ipcMain.handle('open-project', async (event) => {
+    console.log(event)
+
+    return await dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'], filters: [{ name: 'JavaScript Object Notation', extensions: ['json'] }], })
   })
 }
 

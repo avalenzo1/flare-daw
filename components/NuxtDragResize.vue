@@ -1,7 +1,6 @@
 <template>
-  <div :style="{ top: top + 'px', left: left + 'px' }"
-    class="nuxt-drag-resize"
-    @resize="handleResize">
+  <div :style="{ top: top + 'px', left: left + 'px', minHeight: this.minH + 'px' }" class="nuxt-drag-resize" @resize="handleResize"
+    @click="handleClick">
     <slot></slot>
   </div>
 </template>
@@ -40,20 +39,32 @@ export default {
   data() {
     return {
       active: null,
-      zIndex: 0,
       parentWidth: null,
       parentHeight: null,
       left: this.x,
       top: this.y,
-      minHeight: this.minH,
 
       dragHandleEl: null
     }
   },
 
   methods: {
+    handleClick() {
+      // If NuxtDragResize is clicked, creates EventListener for 'handleFlyout'
+      // Checks if user clicks outside of NuxtDragResize component
+      if (!this.active) {
+        this.bringToFront();
+        window.addEventListener('click', this.handleFlyout);
+      }
+    },
     handleStart(e) {
       this.dragging = true;
+
+      this.bringToFront();
+
+      if (!this.active) {
+        window.addEventListener('click', this.handleFlyout);
+      }
 
       if (e.clientX || e.clientY) {
         this.startLeft = e.clientX;
@@ -66,7 +77,6 @@ export default {
       }
 
       let boundingClientRect = e.target.closest('.nuxt-drag-resize').getBoundingClientRect();
-
 
       this.marginLeft = this.startLeft - boundingClientRect.x;
       this.marginTop = this.startTop - boundingClientRect.y;
@@ -87,16 +97,44 @@ export default {
     handleEnd(e) {
       if (this.dragging) this.dragging = false;
     },
+    handleFlyout(e) {
+      let componentElement = this.$el;
+      let targetElement = e.target;
 
+      // While the targetted element is exists...
+
+      while (targetElement) {
+        // If the target Element is equal to the flyout element
+        // Sets active to true
+        if (componentElement == targetElement) {
+          this.bringToFront();
+
+          return;
+        }
+
+        // This will go to parentNode until it finds (or does't find) the find this.$el (The NuxtDragComponent)
+        targetElement = targetElement.parentNode;
+      }
+
+      this.active = false;
+
+      window.removeEventListener('click', this.handleFlyout);
+    },
     handleResize(e) {
       console.log(e.target)
+    },
+    bringToFront() {
+      let componentParentElement = this.$el.parentNode;
+      let componentElement = this.$el;
+
+      componentParentElement.removeChild(componentElement);
+      componentParentElement.appendChild(componentElement);
+
+      this.active = true;
     }
   },
 
   beforeMount() {
-    window.addEventListener('mousemove', this.handleMove);
-    window.addEventListener('touchmove', this.handleMove);
-
     window.addEventListener('mousemove', this.handleMove);
     window.addEventListener('touchmove', this.handleMove);
 
@@ -110,15 +148,18 @@ export default {
 
     let dragHandle = this.$el.querySelector(this.dragHandle);
 
-    dragHandle.addEventListener('touchstart', this.handleStart.bind(this));
-    dragHandle.addEventListener('mousedown', this.handleStart.bind(this));
+    // Is the bind(this) necessary to write out?
+    dragHandle.addEventListener('touchstart', this.handleStart);
+    dragHandle.addEventListener('mousedown', this.handleStart);
+
+    this.$el.style.height = this.h + 'px';
   },
 
   beforeUnmount() {
     let dragHandle = this.$el.querySelector(this.dragHandle);
-      
-    dragHandle.removeEventListener('touchstart', this.handleStart.bind(this));
-    dragHandle.removeEventListener('mousedown', this.handleStart.bind(this));
+
+    dragHandle.removeEventListener('touchstart', this.handleStart);
+    dragHandle.removeEventListener('mousedown', this.handleStart);
   },
 
   beforeDestroy() {
@@ -128,6 +169,8 @@ export default {
     window.removeEventListener('mouseup', this.handleEnd);
     window.removeEventListener('touchend', this.handleEnd);
     window.removeEventListener('touchcancel', this.handleEnd);
+
+    window.removeEventListener('click', this.handleFlyout);
   }
 }
 </script>

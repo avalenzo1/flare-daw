@@ -1,9 +1,11 @@
-import { v4 as uuidv4 } from 'uuid';
+import {v4 as uuidv4} from 'uuid';
 
-const UUID = () => { return uuidv4() };
+const UUID = () => {
+  return uuidv4()
+};
 
 type AudioOptions = {
-  ctx: AudioContext
+  ctx: AudioContext;
   muted: boolean;
   gain: number;
   pan: number;
@@ -11,36 +13,41 @@ type AudioOptions = {
 }
 
 type TrackProperties = {
-  name: string
+  name: string;
   color: string
 }
 
 class Channel {
-  constructor() {
-
-  }
+  constructor() {}
 }
 
 class Track {
   public UUID: string;
 
-  public name: string;
-  public color: string;
+  public name : string;
+  public color : string;
 
-  public ctx: AudioContext;
-  public source: AudioBufferSourceNode;
-  public buffer: AudioBuffer;
+  public ctx : AudioContext;
+  public source : AudioBufferSourceNode;
+  public buffer : AudioBuffer;
 
-  public panNode: StereoPannerNode;
-  public gainNode: GainNode;
-  public analyserNode: AnalyserNode;
+  public panNode : StereoPannerNode;
+  public gainNode : GainNode;
+  public analyserNode : AnalyserNode;
+  o
 
-  private _playbackRate: number;
+  private _playbackRate : number;
 
-  public pcmData: Float32Array;
-  public db: number;
+  public pcmData : Float32Array;
+  public db : number;
 
-  constructor({ name, color }: TrackProperties, { playBackRate, ctx, muted, gain, pan }: AudioOptions) {
+  constructor({name, color} : TrackProperties, {
+    playBackRate,
+    ctx,
+    muted,
+    gain,
+    pan
+  } : AudioOptions) {
     this.UUID = UUID();
 
     this.name = name;
@@ -50,7 +57,7 @@ class Track {
 
 
     this.source = this.ctx.createBufferSource();
-    this.buffer = this.ctx.createBuffer(1,1,44100);
+    this.buffer = this.ctx.createBuffer(1, 1, 44100);
 
     this.panNode = this.ctx.createStereoPanner();
     this.panNode.pan.value = pan || 0;
@@ -68,30 +75,35 @@ class Track {
     this.effects = [];
   }
 
-  /**
-     * createBuffer saves parsed audio asset to reuse when needed
-     *
-     * @param {AudioBuffer} buffer 
-     * @returns
-     */
 
   get playbackRate() {
     return this._playbackRate;
   }
 
-  set playbackRate(playbackRate: number) {
-    // holy. Why do I need to do this?
+  set playbackRate(playbackRate : number) { // holy. Why do I need to do this?
     this._playbackRate = playbackRate;
 
     this.source.playbackRate.value = this._playbackRate;
   }
 
-  createBuffer(buffer: AudioBuffer) {
+  /**
+     * createBuffer saves parsed audio asset to reuse when needed
+     *
+     * @param {AudioBuffer} buffer 
+     * @returns void
+     */
+
+  createBuffer(buffer : AudioBuffer) {
     this.buffer = buffer;
   }
 
-  initializeBuffer() {
-    // Creates Audio Buffer Source Node
+  /**
+     * initializeBuffer initializes all Nodes
+     *
+     * @returns void
+     */
+
+  initializeBuffer() { // Creates Audio Buffer Source Node
     this.source = this.ctx.createBufferSource();
 
     // Reinserts existing Buffer Array
@@ -129,8 +141,7 @@ class Track {
 
     if (this.ctx.state === 'suspended') {
       await this.ctx.resume();
-    }
-    else {
+    } else {
       console.log("heyyy")
       this.initializeBuffer();
 
@@ -147,7 +158,10 @@ class Track {
   }
 
   async stop() {
-    if (!(this.ctx.state === 'closed')) await this.source.stop(0);
+    if (!(this.ctx.state === 'closed')) 
+      await this.source.stop(0);
+    
+
 
     window.cancelAnimationFrame(this.reqId);
   }
@@ -156,7 +170,9 @@ class Track {
     this.analyserNode.getFloatTimeDomainData(this.pcmData);
 
     let sumSquares = 0.0;
-    for (const amplitude of this.pcmData) { sumSquares += amplitude * amplitude; }
+    for (const amplitude of this.pcmData) {
+      sumSquares += amplitude * amplitude;
+    }
 
     this.db = Math.sqrt(sumSquares / this.pcmData.length);
 
@@ -164,21 +180,19 @@ class Track {
   }
 }
 
-class RecorderTrack extends Track {
-
-}
+class RecorderTrack extends Track {}
 
 class SampleTrack extends Track {
-  path: string;
+  path : string;
 
-  constructor(trackProperties: TrackProperties, audioOptions: AudioOptions) {
+  constructor(trackProperties : TrackProperties, audioOptions : AudioOptions) {
     super(trackProperties, audioOptions);
 
     this.path = "";
 
   }
 
-  async fetchAudio(path: string) {
+  async fetchAudio(path : string) {
     let res = await fetch(path);
 
     if (res.ok) {
@@ -186,8 +200,7 @@ class SampleTrack extends Track {
       let arrayBuffer = await this.ctx.decodeAudioData(data);
 
       this.createBuffer(arrayBuffer);
-    }
-    else {
+    } else {
       // An error occured
 
       // File was not found
@@ -196,25 +209,25 @@ class SampleTrack extends Track {
       }
 
       // Unexpected
-      throw new Error(`An error with status code (${res.status}) occured`);
+      throw new Error(`An error with status code (${
+        res.status
+      }) occured`);
     }
   }
 }
 
-class PianoRollTrack extends Track {
-
-}
+class PianoRollTrack extends Track {}
 
 class Flare {
-  ctx: AudioContext;
-  tracks: Track[];
-  channels: Channel[];
-  timeSignature: any;
-  paused: boolean;
-  time: number;
-  bpm: number;
+  ctx : AudioContext;
+  tracks : Track[];
+  channels : Channel[];
+  timeSignature : any;
+  paused : boolean;
+  time : number;
+  bpm : number;
 
-  constructor(){
+  constructor() {
     this.ctx = new AudioContext();
     this.tracks = [];
     this.channels = [];
@@ -222,7 +235,7 @@ class Flare {
     this.timeSignature = [4, 4];
     this.time = 0;
     this.bpm = 130; // 1000 * 60 / this.bpm
-    
+
   }
 
   async stop() {
@@ -239,13 +252,17 @@ class Flare {
     for (let track of this.tracks) {
       if (this.paused) {
         track.pause();
-      }
-
-      else {
+      } else {
         track.play();
       }
     }
   }
 }
 
-export { Flare, Track, PianoRollTrack, SampleTrack, RecorderTrack };
+export {
+  Flare,
+  Track,
+  PianoRollTrack,
+  SampleTrack,
+  RecorderTrack
+};
