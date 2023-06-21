@@ -7,6 +7,7 @@ type AudioOptions = {
   muted: boolean;
   gain: number;
   pan: number;
+  playBackRate: number;
 }
 
 type TrackProperties = {
@@ -21,23 +22,25 @@ class Channel {
 }
 
 class Track {
-  UUID: string;
+  public UUID: string;
 
-  name: string;
-  color: string;
+  public name: string;
+  public color: string;
 
-  ctx: AudioContext;
-  source: AudioBufferSourceNode;
-  buffer: AudioBuffer;
+  public ctx: AudioContext;
+  public source: AudioBufferSourceNode;
+  public buffer: AudioBuffer;
 
-  panNode: StereoPannerNode;
-  gainNode: GainNode;
-  analyserNode: AnalyserNode;
+  public panNode: StereoPannerNode;
+  public gainNode: GainNode;
+  public analyserNode: AnalyserNode;
 
-  pcmData: Float32Array;
-  db: number;
+  private _playbackRate: number;
 
-  constructor({ name, color }: TrackProperties, { ctx, muted, gain, pan }: AudioOptions) {
+  public pcmData: Float32Array;
+  public db: number;
+
+  constructor({ name, color }: TrackProperties, { playBackRate, ctx, muted, gain, pan }: AudioOptions) {
     this.UUID = UUID();
 
     this.name = name;
@@ -45,9 +48,9 @@ class Track {
 
     this.ctx = ctx;
 
-    console.log(this.ctx)
 
     this.source = this.ctx.createBufferSource();
+    this.buffer = this.ctx.createBuffer(1,1,44100);
 
     this.panNode = this.ctx.createStereoPanner();
     this.panNode.pan.value = pan || 0;
@@ -60,6 +63,8 @@ class Track {
     this.reqId = null;
     this.db = 0;
 
+    this._playbackRate = 1;
+
     this.effects = [];
   }
 
@@ -69,6 +74,17 @@ class Track {
      * @param {AudioBuffer} buffer 
      * @returns
      */
+
+  get playbackRate() {
+    return this._playbackRate;
+  }
+
+  set playbackRate(playbackRate: number) {
+    // holy. Why do I need to do this?
+    this._playbackRate = playbackRate;
+
+    this.source.playbackRate.value = this._playbackRate;
+  }
 
   createBuffer(buffer: AudioBuffer) {
     this.buffer = buffer;
@@ -81,11 +97,30 @@ class Track {
     // Reinserts existing Buffer Array
     this.source.buffer = this.buffer;
 
+    // Sets playbackRate
+
+    console.log(this.source.playbackRate)
+
+    this.source.playbackRate.value = this.playbackRate;
+
     // [AudioBufferSourceNode] => [GainNode] => [StereoPannerNode] => [AnalyserNode] => Output
+
+
+    // TODO: Split the Node So that there is a wetness/dryness knob
+    // Idea: Create UI like Blender for Audio Context for effects!!!!
+
+    let convolver = this.ctx.createConvolver();
+
+    convolver.buffer = this.buffer;
+
+    convolver.normalize = true;
+
+    const splitter = this.ctx.createChannelSplitter();
 
     this.source.connect(this.gainNode);
     this.gainNode.connect(this.panNode);
     this.panNode.connect(this.analyserNode);
+    // this.convolver.connect(this.analyserNode);
     this.analyserNode.connect(this.ctx.destination);
   }
 
@@ -109,14 +144,9 @@ class Track {
     if (this.ctx.state === 'running') {
       await this.ctx.suspend();
     }
-
-    this.initializeBuffer();
   }
 
   async stop() {
-    // TODO: Fix bug where audio doesn't stop when played after paused
-    console.log(this.ctx.state);
-    console.log(this.ctx)
     if (!(this.ctx.state === 'closed')) await this.source.stop(0);
 
     window.cancelAnimationFrame(this.reqId);
@@ -141,8 +171,8 @@ class RecorderTrack extends Track {
 class SampleTrack extends Track {
   path: string;
 
-  constructor({ name, color }: TrackProperties, { ctx, muted, gain, pan }: AudioOptions) {
-    super({ name, color }, { ctx, muted, gain, pan });
+  constructor(trackProperties: TrackProperties, audioOptions: AudioOptions) {
+    super(trackProperties, audioOptions);
 
     this.path = "";
 

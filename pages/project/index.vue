@@ -23,6 +23,7 @@ definePageMeta({
 
     <div class="relative">
       <Window title="Editor">
+        {{ flare.ctx.currentTime }}
         {{ state }}
         <UButtonGroup class="mb-2">
 
@@ -47,6 +48,10 @@ definePageMeta({
 
               <UFormGroup name="gain" label="Gain">
                 <input type="range" class="w-12" v-model.number="track.gainNode.gain.value" step="0.1" min="0" max="2" />
+              </UFormGroup>
+
+              <UFormGroup name="pitch" label="Pitch">
+                <input type="range" class="w-12" v-model.number="track.playbackRate" step="0.05" min="0.25" max="3" />
               </UFormGroup>
             </div>
           </li>
@@ -101,6 +106,8 @@ export default {
       // Fetches path
 
       await this.flare.tracks[0].fetchAudio("metronome/1.ogg");
+
+      
     } catch (error) {
       console.warn(error)
       new Audio("/notification/warning.wav").play();
@@ -111,6 +118,8 @@ export default {
       // Fetches path
 
       await this.flare.tracks[1].fetchAudio("Find A Way.mp3");
+
+      this.flare.tracks[1].playbackRate = 0.75;
     } catch (error) {
       console.warn(error)
       new Audio("/notification/warning.wav").play();
@@ -126,7 +135,7 @@ export default {
 
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     this.flare.ctx.close();
   }
 }

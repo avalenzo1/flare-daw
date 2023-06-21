@@ -1,7 +1,7 @@
 export default defineAppConfig({
   ui: {
     icons: ['mdi', 'heroicons'],
-    primary: 'indigo',
+    primary: 'amber',
     gray: 'stone',
     // secondary: 'purple',
     // warning: 'orange',

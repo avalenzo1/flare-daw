@@ -1,8 +1,6 @@
 <template>
   <div class="flex justify-between py-2 border-b border-gray-300 dark:border-gray-800">
-    <UInputGroup label="Search">
-      <UInput icon="i-heroicons-magnifying-glass" variant="none"></UInput>
-    </UInputGroup>
+    <UInput icon="i-heroicons-magnifying-glass" placeholder="Search" variant="none"></UInput>
 
     <UButtonGroup>
       <UButton color="primary" variant="soft" to="/project">New Project</UButton>
