@@ -1,8 +1,5 @@
 <script setup>
-import { useMainStore } from '@/store/main.ts';
-
 const colorMode = useColorMode();
-const mainStore = useMainStore();
 
 const isDark = computed({
   get() {
@@ -33,8 +30,8 @@ const language = ref(languages[0])
   <UFormGroup name="illegal" label="Illegal Plugins">
     <UTooltip text="By enabling this option. Illegal Plugins will show up.">
       <UButton color="gray" variant="ghost"
-    aria-label="Theme" @click="mainStore.updateSettings({ enableIllegalPlugins: !mainStore.settings.enableIllegalPlugins })">
-    {{ mainStore.settings.enableIllegalPlugins ? 'Enable Illegal Plugins' : 'Disable Illegal Plugins' }}
+    aria-label="Theme" @click="$mainStore.updateSettings({ allowIllegalPlugins: !$mainStore.settings.allowIllegalPlugins })">
+    {{ $mainStore.settings.allowIllegalPlugins ? 'Disable Illegal Plugins' : 'Enable Illegal Plugins' }}
     </UButton>
   </UTooltip>
     

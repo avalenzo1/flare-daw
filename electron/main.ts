@@ -39,10 +39,21 @@ function bootstrap() {
     win.loadFile(path.join(process.env.VITE_PUBLIC!, 'index.html'))
   }
 
+  // Opening Project
   ipcMain.handle('open-project', async (event) => {
     console.log(event)
 
     return await dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'], filters: [{ name: 'JavaScript Object Notation', extensions: ['json'] }], })
+  })
+
+  // Saving Project
+  ipcMain.handle('save-project', async (event) => {
+    
+    return await dialog.showSaveDialog({})
+  })
+
+  ipcMain.handle('open-directory', async (event) => {
+    return await dialog.showOpenDialog({ properties: ['openDirectory'] })
   })
 }
 

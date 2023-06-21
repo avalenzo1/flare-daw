@@ -1,9 +1,11 @@
 <script setup lang="ts">
-const toast = useToast();
-
 definePageMeta({
   layout: "project",
 });
+
+useSeoMeta({
+  title: "New Project"
+})
 </script>
 
 <template>
@@ -66,14 +68,17 @@ definePageMeta({
         :x="400" :y="i * 100">
         <input type="range" :value="track.db * 80" disabled="true" />
       </Window>
+
+      <Window title="YouTube Extractor" v-if="$mainStore.settings.allowIllegalPlugins">
+        <YouTubeExtractor />
+      </Window>
     </div>
+
   </UContainer>
 </template>
 
 <script lang="ts">
 import { Flare, SampleTrack } from '@/assets/flare';
-
-const toast = useToast();
 
 export default {
   data() {
@@ -111,7 +116,7 @@ export default {
     } catch (error) {
       console.warn(error)
       new Audio("/notification/warning.wav").play();
-      toast.add({ title: error.message, icon: "i-heroicons-exclamation-circle", color: "yellow" })
+      this.$toast.add({ title: error.message, icon: "i-heroicons-exclamation-circle", color: "yellow" })
     }
 
     try {
@@ -123,7 +128,7 @@ export default {
     } catch (error) {
       console.warn(error)
       new Audio("/notification/warning.wav").play();
-      toast.add({ title: error.message, icon: "i-heroicons-exclamation-circle", color: "yellow" })
+      this.$toast.add({ title: error.message, icon: "i-heroicons-exclamation-circle", color: "yellow" })
     }
 
     this.flare.bpm = 80;

@@ -12,7 +12,10 @@
         </div>
       </template>
 
-      <slot />
+      <div class="overflow-auto">
+        <slot />
+      </div>
+      
     </UCard>
   </NuxtDragResize>
 </template>

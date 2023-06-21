@@ -98,6 +98,8 @@ export default {
       if (this.dragging) this.dragging = false;
     },
     handleFlyout(e) {
+      if (this.active) return;
+
       let componentElement = this.$el;
       let targetElement = e.target;
 

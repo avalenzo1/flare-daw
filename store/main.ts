@@ -9,7 +9,7 @@ export const useMainStore = defineStore('main', {
   state: () => ({ 
     settings: {
       language: 'English',
-      enableIllegalPlugins: false
+      allowIllegalPlugins: false
     },
   }),
   getters: {},
@@ -20,5 +20,6 @@ export const useMainStore = defineStore('main', {
         ...partialSettings,
       }
     },
-  }
+  },
+  persist: true
 });

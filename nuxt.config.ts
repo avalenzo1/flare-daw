@@ -3,9 +3,7 @@ export default defineNuxtConfig({
   devtools: {
     enabled: true
   },
-  modules: [
-    'nuxt-electron', '@pinia-plugin-persistedstate/nuxt', '@pinia/nuxt', '@nuxthq/ui'
-  ],
+  modules: ['nuxt-electron', '@pinia-plugin-persistedstate/nuxt', '@pinia/nuxt', '@nuxthq/ui'],
   electron: {
     build: [
       { // Main-Process entry file of the Electron App.
