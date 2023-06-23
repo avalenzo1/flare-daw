@@ -23,7 +23,7 @@
       <USelectMenu v-model="fileType" :options="supportedFileTypes"></USelectMenu>
     </UFormGroup>
 
-    <UButton type="submit">Download</UButton>
+    <UButton type="submit" :loading="loading">Download</UButton>
   </form>
 </template>
 
@@ -34,11 +34,14 @@ export default {
   data() {
     return {
       loading: false,
-      url: "https://www.youtube.com/watch?v=u5xt5WG7tt0",
+      
+      supportedFileTypes: ['mp3', 'wav', 'ogg'],
+
+      url: "https://www.youtube.com/shorts/Ge89RlkfBKg",
       filePath: null,
       fileName: null,
-      supportedFileTypes: ['ogg', 'mp3'],
       fileType: 'mp3',
+      
       videoInfo: null
     }
   },
@@ -57,7 +60,7 @@ export default {
         this.videoInfo = await $fetch(`/api/ytdl/info?url=${this.url}`);
         this.fileName = this.videoInfo.videoDetails.title;
       } catch (error) {
-        this.$toast.add({ title: error.message, icon: "i-heroicons-exclamation-circle", color: "red" })
+        this.$toast.add({ title: error.message, icon: "i-heroicons-exclamation-circle", color: "red" });
       }
 
       this.loading = false;
@@ -71,8 +74,15 @@ export default {
         while (this.filePath === null) {
           await this.openDirectory();
         }
+        
+        const params = new URLSearchParams({
+          url: this.url,
+          filePath: this.filePath,
+          fileName: this.fileName,
+          fileType: this.fileType
+        }).toString();
 
-        const response = await $fetch(`/api/ytdl/download?url=${this.url}&filePath=${this.filePath}&fileName=${this.fileName}&fileType=${this.fileType}`)
+        const response = await $fetch(`/api/ytdl/download/?${params}`);
 
         this.$toast.add({
           title: "Sucessfully Downloaded Audio",
@@ -80,12 +90,14 @@ export default {
             {
               label: 'Open File',
               click: () => {
-                window.open(response.path, '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
+                // Creates window to path
+                window.open(response.path, '_blank', 'location=yes,height=500,width=500,scrollbars=yes,status=yes');
               }
             },
             {
               label: 'Paste to Clipboard',
               click: () => {
+                // Saves to clipboard
                 navigator.clipboard.writeText(response.path);
               }
             }

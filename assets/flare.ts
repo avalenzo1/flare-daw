@@ -21,6 +21,10 @@ class Channel {
   constructor() {}
 }
 
+class EffectsChain {
+  
+}
+
 class Track {
   public UUID: string;
 
@@ -34,7 +38,6 @@ class Track {
   public panNode : StereoPannerNode;
   public gainNode : GainNode;
   public analyserNode : AnalyserNode;
-  o
 
   private _playbackRate : number;
 
@@ -55,7 +58,6 @@ class Track {
 
     this.ctx = ctx;
 
-
     this.source = this.ctx.createBufferSource();
     this.buffer = this.ctx.createBuffer(1, 1, 44100);
 
@@ -75,7 +77,6 @@ class Track {
     this.effects = [];
   }
 
-
   get playbackRate() {
     return this._playbackRate;
   }
@@ -87,6 +88,19 @@ class Track {
   }
 
   /**
+     * toggleReverse will reverse audio 
+     *
+     * @returns void
+     */
+
+  async reverse(): Promise<void> {
+    if (this.buffer === null) return;
+
+    Array.prototype.reverse.call( this.buffer.getChannelData(0) );
+    Array.prototype.reverse.call( this.buffer.getChannelData(1) );
+  }
+
+  /**
      * createBuffer saves parsed audio asset to reuse when needed
      *
      * @param {AudioBuffer} buffer 
@@ -95,6 +109,8 @@ class Track {
 
   createBuffer(buffer : AudioBuffer) {
     this.buffer = buffer;
+
+    
   }
 
   /**
@@ -103,7 +119,7 @@ class Track {
      * @returns void
      */
 
-  initializeBuffer() { // Creates Audio Buffer Source Node
+  initializeBuffer(): void { // Creates Audio Buffer Source Node
     this.source = this.ctx.createBufferSource();
 
     // Reinserts existing Buffer Array
@@ -121,22 +137,13 @@ class Track {
     // TODO: Split the Node So that there is a wetness/dryness knob
     // Idea: Create UI like Blender for Audio Context for effects!!!!
 
-    let convolver = this.ctx.createConvolver();
-
-    convolver.buffer = this.buffer;
-
-    convolver.normalize = true;
-
-    const splitter = this.ctx.createChannelSplitter();
-
     this.source.connect(this.gainNode);
     this.gainNode.connect(this.panNode);
     this.panNode.connect(this.analyserNode);
-    // this.convolver.connect(this.analyserNode);
     this.analyserNode.connect(this.ctx.destination);
   }
 
-  async play() {
+  async play(): Promise<void> {
     this.reqId = window.requestAnimationFrame(this.frame.bind(this));
 
     if (this.ctx.state === 'suspended') {
@@ -149,7 +156,7 @@ class Track {
     }
   }
 
-  async pause() {
+  async pause(): Promise<void> {
     window.cancelAnimationFrame(this.reqId);
 
     if (this.ctx.state === 'running') {
@@ -157,12 +164,10 @@ class Track {
     }
   }
 
-  async stop() {
+  async stop(): Promise<void> {
     if (!(this.ctx.state === 'closed')) 
       await this.source.stop(0);
     
-
-
     window.cancelAnimationFrame(this.reqId);
   }
 
@@ -193,6 +198,7 @@ class SampleTrack extends Track {
   }
 
   async fetchAudio(path : string) {
+    console.log(path)
     let res = await fetch(path);
 
     if (res.ok) {
@@ -216,7 +222,29 @@ class SampleTrack extends Track {
   }
 }
 
-class PianoRollTrack extends Track {}
+class PianoRollTrack extends Track {
+  oscillator: OscillatorNode
+
+  constructor(trackProperties : TrackProperties, audioOptions : AudioOptions) {
+    super(trackProperties, audioOptions);
+
+    console.log(this.ctx);
+
+    this.oscillator = this.ctx.createOscillator();
+    // create Oscillator node
+    
+  }
+
+  async playNote()
+  {
+    this.oscillator = this.ctx.createOscillator();
+    this.oscillator.type = "square";
+    this.oscillator.frequency.setValueAtTime(440, this.ctx.currentTime); // value in hertz
+    this.oscillator.connect(this.ctx.destination);
+    this.oscillator.start(0);
+    this.oscillator.stop(1);
+  }
+}
 
 class Flare {
   ctx : AudioContext;
@@ -235,7 +263,6 @@ class Flare {
     this.timeSignature = [4, 4];
     this.time = 0;
     this.bpm = 130; // 1000 * 60 / this.bpm
-
   }
 
   async stop() {

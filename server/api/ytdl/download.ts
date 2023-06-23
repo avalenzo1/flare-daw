@@ -3,29 +3,36 @@ import fs from 'fs';
 import path from 'path';
 
 export default defineEventHandler(async (event) => {
+  // Fetch query params
   let { url, filePath, fileName, fileType } = getQuery(event);
 
+  // Throw error if any query params are empty
   if (url === null) throw new Error('Empty Url');
-  if (filePath === null) throw new Error('Empty directory');
-  if (fileName === null) throw new Error('Empty directory');
-  if (fileType === null) throw new Error('Empty directory');
+  if (filePath === null) throw new Error('Empty filePath');
+  if (fileName === null) throw new Error('Empty fileName');
+  if (fileType === null) throw new Error('Empty fileType');
 
+  // Replace backward slashes with forward slashes
+  filePath = filePath?.replace(/\\/g, "/");
+  
+  // Removes any illegal characters in fileName
   fileName = fileName?.replace(/[/\\?%*:|"<>]/g, '-');
 
-  const fullFilePath = `${filePath}\\${fileName}.${fileType}`;
+  // File Path to store audio
+  const fullFilePath = `${filePath}/${fileName}.${fileType}`;
 
+  // Youtube Extraction
   const stream = ytdl(url, {
     filter: 'audioonly',
     format: fileType
   })
   .pipe(fs.createWriteStream(fullFilePath));
 
-  var end = new Promise(function(resolve, reject) {
+  // Create promise for stream
+  const end = new Promise(function(resolve, reject) {
     stream.on('finish', () => resolve({ path: fullFilePath }));
     stream.on('error', reject);
   });
-
-  console.log(end);
 
   return await end;
 });

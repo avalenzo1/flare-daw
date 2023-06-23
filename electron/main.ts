@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, Menu, ipcMain, shell } from 'electron'
 import path from 'path'
 
 // The built directory structure
@@ -18,11 +18,11 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
   : path.join(process.env.ROOT, '.output/public')
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
-let win: BrowserWindow
+let mainWindow: BrowserWindow
 const preload = path.join(process.env.DIST, 'preload.js')
 
 function bootstrap() {
-  win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     webPreferences: {
       preload,
       nodeIntegrationInWorker: true,
@@ -32,11 +32,29 @@ function bootstrap() {
     },
   })
 
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
+  ipcMain.on('show-context-menu', (event) => {
+    const template = [
+      {
+        label: 'Menu Item 1',
+        click: () => { event.sender.send('context-menu-command', 'menu-item-1') }
+      },
+      { type: 'separator' },
+      { label: 'Menu Item 2', type: 'checkbox', checked: true }
+    ]
+    const menu = Menu.buildFromTemplate(template)
+    menu.popup({ window: BrowserWindow.fromWebContents(event.sender) })
+  })
+
   if (process.env.VITE_DEV_SERVER_URL) {
-    win.loadURL(process.env.VITE_DEV_SERVER_URL)
-    win.webContents.openDevTools()
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL)
+    mainWindow.webContents.openDevTools()
   } else {
-    win.loadFile(path.join(process.env.VITE_PUBLIC!, 'index.html'))
+    mainWindow.loadFile(path.join(process.env.VITE_PUBLIC!, 'index.html'))
   }
 
   // Opening Project
@@ -55,6 +73,8 @@ function bootstrap() {
   ipcMain.handle('open-directory', async (event) => {
     return await dialog.showOpenDialog({ properties: ['openDirectory'] })
   })
+
+  
 }
 
 app.whenReady().then(bootstrap)

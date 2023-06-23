@@ -3,7 +3,7 @@
     <UCard class="h-full">
       <template #header>
         <div class="flex items-center">
-          <span class="drag flex-1 text-ellipsis line-clamp-1">{{ title }}</span>
+          <span class="drag cursor-grab active:cursor-grabbing flex-1 text-ellipsis line-clamp-1">{{ title }}</span>
           <UButtonGroup>
             <UButton :icon="fullscreen ? 'i-heroicons-arrows-pointing-in' : 'i-heroicons-arrows-pointing-out'"
               @click="toggleFullscreen" variant="soft" />
@@ -12,10 +12,9 @@
         </div>
       </template>
 
-      <div class="overflow-auto">
+      <div class="relative overflow-auto h-full">
         <slot />
       </div>
-      
     </UCard>
   </NuxtDragResize>
 </template>

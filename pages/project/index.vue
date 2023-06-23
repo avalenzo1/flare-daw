@@ -10,7 +10,7 @@ useSeoMeta({
 
 <template>
   <UContainer>
-    <div class="flex gap-2 relative">
+    <nav class="flex gap-2 relative">
       <UButton to="/" icon="i-heroicons-arrow-left"></UButton>
 
       <UFormGroup name="bpm" label="BPM">
@@ -21,12 +21,25 @@ useSeoMeta({
         <UInput type="number" v-model.number="flare.timeSignature[0]" step="1" min="1" max="32"></UInput>
         <UInput type="number" v-model.number="flare.timeSignature[1]" step="1" min="1" max="32"></UInput>
       </UFormGroup>
-    </div>
+    </nav>
 
-    <div>
+    <aside>
+
+    </aside>
+
+    <main>
+      <Window v-for="(track, i) in flare.tracks" :key="i + 1" :title="'Track Window ' + track.name" :w="400" :h="400"
+        :x="400" :y="i * 100">
+        <input type="range" :value="track.db * 80" disabled="true" />
+
+        <PianoRollCanvas :track="track" />
+      </Window>
+
+      <Window title="YouTube Extractor" v-if="$mainStore.settings.allowIllegalPlugins">
+        <YouTubeExtractor />
+      </Window>
+
       <Window title="Editor">
-        {{ flare.ctx.currentTime }}
-        {{ state }}
         <UButtonGroup class="mb-2">
 
           <UButton @click="flare.toggle()" :label="flare.paused ? 'Play' : 'Pause'"
@@ -40,6 +53,7 @@ useSeoMeta({
           <li v-for="track in flare.tracks">
             <div class="flex items-end gap-4">
               <UButton color="blue">View</UButton>
+
               <UFormGroup name="name" label="Name">
                 <UInput type="text" v-model="track.name" step="0.1" min="-1" max="1"></UInput>
               </UFormGroup>
@@ -56,29 +70,18 @@ useSeoMeta({
                 <input type="range" class="w-12" v-model.number="track.playbackRate" step="0.05" min="0.25" max="3" />
               </UFormGroup>
             </div>
-          </li>
 
-          <div>
-            <canvas id="track"></canvas>
-          </div>
+            <TrackEditorCanvas />
+          </li>
         </ul>
       </Window>
-
-      <Window v-for="(track, i) in flare.tracks" :key="i + 1" :title="'Track Window ' + track.name" :w="400" :h="400"
-        :x="400" :y="i * 100">
-        <input type="range" :value="track.db * 80" disabled="true" />
-      </Window>
-
-      <Window title="YouTube Extractor" v-if="$mainStore.settings.allowIllegalPlugins">
-        <YouTubeExtractor />
-      </Window>
-    </div>
+    </main>
 
   </UContainer>
 </template>
 
 <script lang="ts">
-import { Flare, SampleTrack } from '@/assets/flare';
+import { Flare, SampleTrack, PianoRollTrack } from '@/assets/flare';
 
 export default {
   data() {
@@ -91,28 +94,28 @@ export default {
   },
 
   methods: {
-    async createTrack(trackProperties: TrackProperties) {
+    async createTrack(track: Track, trackProperties: TrackProperties) {
       this.state.loading = true;
 
-      let track = new SampleTrack(trackProperties, { gain: 0, pan: 0, muted: false, ctx: this.flare.ctx });
-      this.flare.tracks.push(track);
+      this.flare.tracks.push(new track(trackProperties, { gain: 0, pan: 0, muted: false, ctx: this.flare.ctx }));
 
       this.state.loading = false;
     }
   },
 
   async mounted() {
-    await this.createTrack({ name: "Metronome", color: "red" });
-    await this.createTrack({ name: "Find A Way", color: "red" });
+    await this.createTrack(SampleTrack, { name: "Metronome", color: "red" });
+    await this.createTrack(SampleTrack, { name: "Find A Way", color: "red" });
+    await this.createTrack(PianoRollTrack, { name: "Piano Roll", color: "red" });
 
     this.state.loading = true;
 
     try {
       // Fetches path
 
-      await this.flare.tracks[0].fetchAudio("metronome/1.ogg");
+      await this.flare.tracks[0].fetchAudio("C:/Users/avale/Desktop/electron/flare/assets/Duvet.mp3");
 
-      
+
     } catch (error) {
       console.warn(error)
       new Audio("/notification/warning.wav").play();
@@ -123,6 +126,7 @@ export default {
       // Fetches path
 
       await this.flare.tracks[1].fetchAudio("Find A Way.mp3");
+      // await this.flare.tracks[1].reverse();
 
       this.flare.tracks[1].playbackRate = 0.75;
     } catch (error) {

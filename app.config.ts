@@ -16,7 +16,7 @@ export default defineAppConfig({
         padding: "p-2"
       },
       body: {
-        padding: "p-2"
+        padding: "p-2 h-full"
       }
     }
   }

@@ -7,7 +7,7 @@
 
 <style>
 .nuxt-drag-resize {
-  @apply absolute max-w-full overflow-auto rounded-lg transition-colors p-2 hover:border hover:resize hover:border-blue-600 hover:bg-opacity-10 hover:bg-blue-600;
+  @apply absolute max-w-full overflow-auto rounded-lg transition-colors p-2 hover:outline hover:resize hover:outline-blue-600 hover:bg-opacity-10 hover:bg-blue-600;
 }
 </style>
 
