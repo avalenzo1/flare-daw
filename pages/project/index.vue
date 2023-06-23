@@ -35,9 +35,11 @@ useSeoMeta({
         <PianoRollCanvas :track="track" />
       </Window>
 
-      <Window title="YouTube Extractor" v-if="$mainStore.settings.allowIllegalPlugins">
-        <YouTubeExtractor />
-      </Window>
+      <div v-if="$mainStore.settings.allowIllegalPlugins">
+        <Window title="YouTube Extractor" >
+          <YouTubeExtractor />
+        </Window>
+      </div>
 
       <Window title="Editor">
         <UButtonGroup class="mb-2">

@@ -1,5 +1,5 @@
 <template>
-  <div class="relative" @resize="handleResize"></div>
+  <div class="relative" @resize="handleResize" @mousedown="this.active = true" @mouseup="this.active = false"></div>
 </template>
   
 <script>
@@ -10,6 +10,12 @@ export default {
   props: {
     track: {
       required: true
+    }
+  },
+
+  data() {
+    return {
+      active: false
     }
   },
 
@@ -65,8 +71,15 @@ export default {
               .drawRect(0, (PIANO_LENGTH * scale) + key * PIANO_WHITE_KEY_HEIGHT, PIANO_WHITE_KEY_WIDTH, PIANO_WHITE_KEY_HEIGHT)
           );
 
-          whiteKey.onPress.connect(async () => {
-            await cache.track.playNote()
+          let tempNote;
+
+          whiteKey.onHover.connect(async () => {
+            tempNote = await cache.track.playNote(PIANO_WHITE_KEYS[key], scale)
+            console.log(PIANO_WHITE_KEYS[key])
+          });
+
+          whiteKey.onOut.connect(async () => {
+            if (tempNote) tempNote.stop();
             console.log(PIANO_WHITE_KEYS[key])
           });
 
