@@ -1,10 +1,10 @@
 <template>
-  <div class="relative" @resize="handleResize" @mousedown="this.active = true" @mouseup="this.active = false"></div>
+  <div class="relative" @resize="handleResize" @mouseenter="this.active = true" @mouseleave="this.active = false"></div>
 </template>
   
-<script>
+<script lang="ts">
 import * as PIXI from 'pixi.js';
-import { Button, ScrollBox } from '@pixi/ui';
+import { Button, ScrollBox, List } from '@pixi/ui';
 
 export default {
   props: {
@@ -15,156 +15,226 @@ export default {
 
   data() {
     return {
-      active: false
+      active: false,
+      pixiApp: null,
+      resizeObserver: null,
+      midiAccess: null
     }
   },
 
-  mounted() {
-    const app = new PIXI.Application({
-      background: 0x333333,
-    });
+  methods: {
+    async createPixiApp() {
+      // Guauuu amo el Javascript tanto
+      // Holy. Get a load of this.
+      const nuxtApp: any = this;
 
-    const resizeObserver = new ResizeObserver((entries) => {
+      const app = new PIXI.Application({
+        width: 600,
+        height: 400,
+      });
+
+      function noteToFreq(note: number) {
+        let a = 440; //frequency of A (coomon value is 440Hz)
+        return (a / 32) * (2 ** ((note - 9) / 12));
+      }
+
+      this.$toast.add({ title: "MIDI Access successfull" });
+
+      if (this.midiAccess) {
+        for (const input of this.midiAccess.inputs.values()) {
+          input.onmidimessage = getMIDIMessage;
+        }
+
+        async function getMIDIMessage(message: any) {
+          const command = message.data[0];
+          const note = message.data[1];
+          const velocity = (message.data.length > 2) ? message.data[2] : 0; // a velocity value might not be included with a noteOff command
+
+          switch (command) {
+            case 144: // noteOn
+              if (velocity > 0) {
+                console.log(note, velocity)
+                await nuxtApp.track.playNote({ frequency: noteToFreq(note) }, velocity);
+              } else {
+                console.log(note)
+              }
+              break;
+            case 128: // noteOff
+              await nuxtApp.track.stopNote({ frequency: noteToFreq(note) });
+              break;
+            // we could easily expand this switch statement to cover other types of commands such as controllers or sysex
+          }
+        }
+      }
+
+
+      const PIANO_WHITE_KEY_WIDTH = 80;
+      const PIANO_WHITE_KEY_HEIGHT = 15;
+      const PIANO_BLACK_KEY_WIDTH = 55;
+      const PIANO_BLACK_KEY_HEIGHT = 11.5;
+      const PIANO_KEYS = [
+        {
+          isWhite: true,
+          note: "A"
+        },
+        {
+          isWhite: false,
+          note: "A#"
+        },
+        {
+          isWhite: true,
+          note: "B"
+        },
+        {
+          isWhite: true,
+          note: "C"
+        },
+        {
+          isWhite: false,
+          note: "C#"
+        },
+        {
+          isWhite: true,
+          note: "D"
+        },
+        {
+          isWhite: false,
+          note: "D#"
+        },
+        {
+          isWhite: true,
+          note: "E"
+        },
+        {
+          isWhite: true,
+          note: "F"
+        },
+        {
+          isWhite: false,
+          note: "F#"
+        },
+        {
+          isWhite: true,
+          note: "G"
+        },
+        {
+          isWhite: false,
+          note: "G#"
+        }
+      ];
+      const PIANO_OCTAVE_RANGE = 9;
+
+      const scrollbox = new ScrollBox({
+        width: PIANO_WHITE_KEY_WIDTH,
+        height: app.view.height
+      });
+
+      function create_key_listener(key: Button, note: string, octave: number) {
+        key.onDown.connect(async () => {
+          if (!nuxtApp.active) return;
+
+          await nuxtApp.track.playNote({ note, octave });
+          console.log(note, octave)
+        });
+
+        key.onUp.connect(async () => {
+          if (!nuxtApp.active) return;
+
+          await nuxtApp.track.stopNote({ note, octave });
+          console.log(note)
+        });
+      }
+
+      function init_gui() {
+        app.stage.addChild(scrollbox);
+
+        for (let octave = 0; octave < PIANO_OCTAVE_RANGE; octave++) {
+          const list = new List();
+
+          // Render for each octave
+          for (let key = 0; key < PIANO_KEYS.length; key++) {
+            const pianoKeyFill = PIANO_KEYS[key].isWhite ? 0xFFFFFF : 0x000000;
+            const pianoKeyStroke = PIANO_KEYS[key].isWhite ? 0x3F3F3F : 0x333333;
+            const pianoKeyWidth = PIANO_KEYS[key].isWhite ? PIANO_WHITE_KEY_WIDTH : PIANO_BLACK_KEY_WIDTH;
+            const pianoKeyHeight = PIANO_KEYS[key].isWhite ? PIANO_WHITE_KEY_HEIGHT : PIANO_BLACK_KEY_HEIGHT;
+
+            // Draw keys
+            const pianoKey = new Button(
+              new PIXI.Graphics()
+                .beginFill(pianoKeyFill)
+                .lineStyle(1, pianoKeyStroke)
+                .drawRect(0, 0, pianoKeyWidth, pianoKeyHeight)
+            );
+
+            // Create Event Listener for Key
+            create_key_listener(pianoKey, PIANO_KEYS[key].note, octave);
+
+            list.addChild(
+              pianoKey.view
+            );
+
+            scrollbox.addItem(list);
+          }
+        }
+      }
+
+      // function loop_gui()
+      // {
+      //   scrollbox.scrollTop()
+
+      //   window.requestAnimationFrame(loop_gui);
+      // }
+
+      init_gui();
+      // window.requestAnimationFrame(loop_gui);
+
+      console.log(app)
+
+      return app;
+    },
+    async destroyPixiApp() {
+
+      // JS memory leak causes exceed limit in OpenGL intances
+      this.resizeObserver.disconnect();
+      this.pixiApp.stage.destroy({
+        children: true,
+        texture: true,
+        baseTexture: true
+      });
+    },
+  },
+
+  async mounted() {
+    if (this.track === undefined) this.$toast.add({ title: 'No track given.' });
+
+    try {
+      this.midiAccess = await navigator.requestMIDIAccess();
+
+    } catch (error: any) {
+      new Audio("/notification/warning.wav").play();
+      this.$toast.add({ title: error.message, icon: "i-heroicons-exclamation-circle", color: "yellow" });
+    }
+
+    this.pixiApp = await this.createPixiApp();
+
+    this.resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
 
         // dynamically adjust the UI layout
         const { width, height } = entry.contentRect;
 
-        console.log(width);
-
-        app.screen.width = app.view.width = width;
-        app.screen.height = app.view.height = height;
+        this.pixiApp.screen.width = this.pixiApp.view.width = width;
+        this.pixiApp.screen.height = this.pixiApp.view.height = height;
       }
     });
 
-    resizeObserver.observe(this.$el)
+    this.resizeObserver.observe(this.$el);
 
-    this.$el.appendChild(app.view);
+    this.$el.appendChild(this.pixiApp.view);
+  },
 
-    const PIANO_WHITE_KEY_WIDTH = 80;
-    const PIANO_WHITE_KEY_HEIGHT = 20;
-    const PIANO_BLACK_KEY_WIDTH = 55;
-    const PIANO_BLACK_KEY_HEIGHT = 11.5;
-    const PIANO_WHITE_KEYS = ["A", "B", "C", "D", "E", "F", "G"];
-    const PIANO_LENGTH = PIANO_WHITE_KEY_HEIGHT * PIANO_WHITE_KEYS.length;
-    const PIANO_SCALE_RANGE = 3;
-
-    const scrollbox = new ScrollBox({ background: 0x0f0f0f, width: app.screen.width, height: app.screen.height })
-
-    // Odio el Javascript
-    const cache = this;
-
-    function init_gui() {
-      const container = new PIXI.Container();
-
-      scrollbox.addChild(container);
-      app.stage.addChild(scrollbox);
-
-      for (let scale = 0; scale < PIANO_SCALE_RANGE; scale++) {
-        // Render for each scale
-        for (let key = 0; key < PIANO_WHITE_KEYS.length; key++) {
-          // Draw a white keys
-          const whiteKey = new Button(
-            new PIXI.Graphics()
-              .beginFill(0xFFFFFF)
-              .lineStyle(1, 0x3F3F3F)
-              .drawRect(0, (PIANO_LENGTH * scale) + key * PIANO_WHITE_KEY_HEIGHT, PIANO_WHITE_KEY_WIDTH, PIANO_WHITE_KEY_HEIGHT)
-          );
-
-          let tempNote;
-
-          whiteKey.onHover.connect(async () => {
-            tempNote = await cache.track.playNote(PIANO_WHITE_KEYS[key], scale)
-            console.log(PIANO_WHITE_KEYS[key])
-          });
-
-          whiteKey.onOut.connect(async () => {
-            if (tempNote) tempNote.stop();
-            console.log(PIANO_WHITE_KEYS[key])
-          });
-
-          container.addChild(whiteKey.view);
-        }
-
-        // Draw black keys
-
-        // G# key
-        const gSharpKey = new Button(
-            new PIXI.Graphics()
-              .beginFill(0x333333)
-              .lineStyle(1, 0x000000)
-              .drawRect(0, (PIANO_LENGTH * scale) - (PIANO_BLACK_KEY_HEIGHT / 2), PIANO_BLACK_KEY_WIDTH, PIANO_BLACK_KEY_HEIGHT)
-          );
-
-        container.addChild(gSharpKey.view);
-
-        gSharpKey.onPress.connect(() => console.log("G#"));
-        
-        // A# key
-        const aSharpKey = new Button(
-            new PIXI.Graphics()
-              .beginFill(0x333333)
-              .lineStyle(1, 0x000000)
-              .drawRect(0, (PIANO_LENGTH * scale) + PIANO_WHITE_KEY_HEIGHT - (PIANO_BLACK_KEY_HEIGHT / 2), PIANO_BLACK_KEY_WIDTH, PIANO_BLACK_KEY_HEIGHT)
-          );
-
-        container.addChild(aSharpKey.view);
-
-        aSharpKey.onPress.connect(() => console.log("A#"));
-        
-        // C# key
-        const cSharpKey = new Button(
-            new PIXI.Graphics()
-              .beginFill(0x333333)
-              .lineStyle(1, 0x000000)
-              .drawRect(0, (PIANO_LENGTH * scale) + PIANO_WHITE_KEY_HEIGHT * 3 - (PIANO_BLACK_KEY_HEIGHT / 2), PIANO_BLACK_KEY_WIDTH, PIANO_BLACK_KEY_HEIGHT)
-          );
-
-        container.addChild(cSharpKey.view);
-
-        cSharpKey.onPress.connect(() => console.log("C#"));
-
-        // D# key
-        const dSharpKey = new Button(
-            new PIXI.Graphics()
-              .beginFill(0x333333)
-              .lineStyle(1, 0x000000)
-              .drawRect(0, (PIANO_LENGTH * scale) + PIANO_WHITE_KEY_HEIGHT * 4 - (PIANO_BLACK_KEY_HEIGHT / 2), PIANO_BLACK_KEY_WIDTH, PIANO_BLACK_KEY_HEIGHT)
-          );
-
-        container.addChild(dSharpKey.view);
-
-        dSharpKey.onPress.connect(() => console.log("D#"));
-        
-        // F# key
-        const fSharpKey = new Button(
-            new PIXI.Graphics()
-              .beginFill(0x333333)
-              .lineStyle(1, 0x000000)
-              .drawRect(0, (PIANO_LENGTH * scale) + PIANO_WHITE_KEY_HEIGHT * 6 - (PIANO_BLACK_KEY_HEIGHT / 2), PIANO_BLACK_KEY_WIDTH, PIANO_BLACK_KEY_HEIGHT)
-          );
-
-        container.addChild(fSharpKey.view);
-
-        fSharpKey.onPress.connect(() => console.log("F#"));
-
-        // Force calculations
-        scrollbox.update()
-      }
-    }
-
-    function draw_gui() {
-      let appWidth = app.view.width;
-      let appHeight = app.view.height;
-    }
-
-    init_gui();
-
-    let y = 0;
-
-    app.ticker.add((delta) => {
-      draw_gui();
-    });
+  beforeDestroy() {
+    this.destroyPixiApp();
   }
 }
 </script>

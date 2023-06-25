@@ -28,18 +28,17 @@ useSeoMeta({
     </aside>
 
     <main>
-      <Window v-for="(track, i) in flare.tracks" :key="i + 1" :title="'Track Window ' + track.name" :w="400" :h="400"
-        :x="400" :y="i * 100">
-        <input type="range" :value="track.db * 80" disabled="true" />
+      <Window :w="200" :h="200">
+        <!-- <input type="range" :value="track.db * 80" disabled="true" /> -->
 
-        <PianoRollCanvas :track="track" />
+        <PianoRollCanvas :track="flare.tracks[0]" />
       </Window>
 
-      <div v-if="$mainStore.settings.allowIllegalPlugins">
+      <!-- <div v-if="$mainStore.settings.allowIllegalPlugins">
         <Window title="YouTube Extractor" >
           <YouTubeExtractor />
         </Window>
-      </div>
+      </div> -->
 
       <Window title="Editor">
         <UButtonGroup class="mb-2">
@@ -96,46 +95,46 @@ export default {
   },
 
   methods: {
-    async createTrack(track: Track, trackProperties: TrackProperties) {
+    async createTrack(flareTrack: Track, trackProperties: TrackProperties) {
       this.state.loading = true;
 
-      this.flare.tracks.push(new track(trackProperties, { gain: 0, pan: 0, muted: false, ctx: this.flare.ctx }));
+      this.flare.tracks.push(new flareTrack(trackProperties, { gain: 0, pan: 0, muted: false, ctx: this.flare.ctx }));
 
       this.state.loading = false;
     }
   },
 
   async mounted() {
-    await this.createTrack(SampleTrack, { name: "Metronome", color: "red" });
-    await this.createTrack(SampleTrack, { name: "Find A Way", color: "red" });
+    // await this.createTrack(SampleTrack, { name: "Metronome", color: "red" });
+    // await this.createTrack(SampleTrack, { name: "Find A Way", color: "red" });
     await this.createTrack(PianoRollTrack, { name: "Piano Roll", color: "red" });
 
     this.state.loading = true;
 
-    try {
-      // Fetches path
+    // try {
+    //   // Fetches path
 
-      await this.flare.tracks[0].fetchAudio("C:/Users/avale/Desktop/electron/flare/assets/Duvet.mp3");
+    //   await this.flare.tracks[0].fetchAudio("C:/Users/avale/Desktop/electron/flare/assets/Duvet.mp3");
 
 
-    } catch (error) {
-      console.warn(error)
-      new Audio("/notification/warning.wav").play();
-      this.$toast.add({ title: error.message, icon: "i-heroicons-exclamation-circle", color: "yellow" })
-    }
+    // } catch (error) {
+    //   console.warn(error)
+    //   new Audio("/notification/warning.wav").play();
+    //   this.$toast.add({ title: error.message, icon: "i-heroicons-exclamation-circle", color: "yellow" })
+    // }
 
-    try {
-      // Fetches path
+    // try {
+    //   // Fetches path
 
-      await this.flare.tracks[1].fetchAudio("Find A Way.mp3");
-      // await this.flare.tracks[1].reverse();
+    //   await this.flare.tracks[1].fetchAudio("Find A Way.mp3");
+    //   // await this.flare.tracks[1].reverse();
 
-      this.flare.tracks[1].playbackRate = 0.75;
-    } catch (error) {
-      console.warn(error)
-      new Audio("/notification/warning.wav").play();
-      this.$toast.add({ title: error.message, icon: "i-heroicons-exclamation-circle", color: "yellow" })
-    }
+    //   this.flare.tracks[1].playbackRate = 0.75;
+    // } catch (error) {
+    //   console.warn(error)
+    //   new Audio("/notification/warning.wav").play();
+    //   this.$toast.add({ title: error.message, icon: "i-heroicons-exclamation-circle", color: "yellow" })
+    // }
 
     this.flare.bpm = 80;
 

@@ -18,8 +18,14 @@ type TrackProperties = {
 }
 
 type Note = {
-  key: string,
-  scale: number
+  midi: Number,               // midi number, e.g. 60
+  time: Number,               // time in seconds
+  ticks: Number,              // time in ticks
+  name: String,               // note name, e.g. "C4",
+  pitch: String,              // the pitch class, e.g. "C",
+  octave : Number,            // the octave, e.g. 4
+  velocity: Number,           // normalized 0-1 velocity
+  duration: Number,           // duration in seconds between noteOn and noteOff
 }
 
 class Channel {
@@ -30,35 +36,56 @@ class EffectsChain {
   
 }
 
-class Track {
-  public UUID: string;
+// https://gist.github.com/stuartmemo/3766449
+// NOT MY CODE
+function getFrequency(note: String) {
+  var notes = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'],
+      octave: number,
+      keyNumber;
 
-  public name : string;
+  if (note.length === 3) {
+      octave = note.charAt(2);
+  } else {
+      octave = note.charAt(1);
+  }
+
+  keyNumber = notes.indexOf(note.slice(0, -1));
+
+  if (keyNumber < 3) {
+      keyNumber = keyNumber + 12 + ((octave - 1) * 12) + 1; 
+  } else {
+      keyNumber = keyNumber + ((octave - 1) * 12) + 1; 
+  }
+
+  // Return frequency of note
+  return 440 * Math.pow(2, (keyNumber- 49) / 12);
+};
+
+class Track {
+  public UUID: String;
+
+  public name : String;
+  public channel: Number;
   public color : string;
 
-  public ctx : AudioContext;
-  public source : AudioBufferSourceNode;
-  public buffer : AudioBuffer;
+  public ctx: AudioContext;
+  public source: AudioBufferSourceNode;
+  private buffer: AudioBuffer;
 
-  public panNode : StereoPannerNode;
-  public gainNode : GainNode;
-  public analyserNode : AnalyserNode;
+  public panNode: StereoPannerNode;
+  public gainNode: GainNode;
+  public analyserNode: AnalyserNode;
 
-  private _playbackRate : number;
+  private _playbackRate: Number;
 
-  public pcmData : Float32Array;
-  public db : number;
+  public pcmData: Float32Array;
+  public db: Number;
 
-  constructor({name, color} : TrackProperties, {
-    playBackRate,
-    ctx,
-    muted,
-    gain,
-    pan
-  } : AudioOptions) {
+  constructor({name, color}: TrackProperties, { playBackRate, ctx, muted, gain, pan }: AudioOptions) {
     this.UUID = UUID();
 
     this.name = name;
+    this.channel = 0;
     this.color = color;
 
     this.ctx = ctx;
@@ -79,6 +106,7 @@ class Track {
 
     this._playbackRate = 1;
 
+    this.notes = [];
     this.effects = [];
   }
 
@@ -229,53 +257,92 @@ class SampleTrack extends Track {
 
 class PianoRollTrack extends Track {
   oscillator: OscillatorNode
+  notes: any;
 
   constructor(trackProperties : TrackProperties, audioOptions : AudioOptions) {
     super(trackProperties, audioOptions);
 
     console.log(this.ctx);
 
+    this.notes = {};
     this.oscillator = this.ctx.createOscillator();
     // create Oscillator node
     
   }
 
-  async playNote(note: string, scale: number)
+  parseFrequency({ note, octave, frequency }: any)
   {
-    const notes = {
-      "C": [16.35, 32.70, 65.41, 130.81, 261.63, 523.25, 1046.50, 2093.00, 4186.01],
-      "Db":   [17.32, 34.65, 69.30, 138.59, 277.18, 554.37, 1108.73, 2217.46, 4434.92],
-      "D":   [18.35, 36.71, 73.42, 146.83, 293.66, 587.33, 1174.66, 2349.32, 4698.64],
-      "Eb":   [19.45, 38.89, 77.78, 155.56, 311.13, 622.25, 1244.51, 2489.02, 4978.03],
-      "E":   [20.60, 41.20, 82.41, 164.81, 329.63, 659.26, 1318.51, 2637.02],
-      "F":   [21.83, 43.65, 87.31, 174.61, 349.23, 698.46, 1396.91, 2793.83],
-      "Gb":   [23.12, 46.25, 92.50, 185.00, 369.99, 739.99, 1479.98, 2959.96],
-      "G":   [24.50, 49.00, 98.00, 196.00, 392.00, 783.99, 1567.98, 3135.96],
-      "Ab":   [25.96, 51.91, 103.83, 207.65, 415.30, 830.61, 1661.22, 3322.44],
-      "A":   [27.50, 55.00, 110.00, 220.00, 440.00, 880.00, 1760.00, 3520.00],
-      "Bb":   [29.14, 58.27, 116.54, 233.08, 466.16, 932.33, 1864.66, 3729.31],
-      "B":   [30.87, 61.74, 123.47, 246.94, 493.88, 987.77, 1975.53, 3951.07]
+    if (typeof frequency === 'number')
+    {
+      return frequency;
+    }
+    
+    if (typeof note === 'string' && typeof octave === 'number')
+    {
+      return getFrequency(`${note}${octave}`);
+    }
+  }
+
+  async playNote({ note, octave, frequency }: any, velocity = 100)
+  {
+    const freq = this.parseFrequency({ note, octave, frequency });
+    
+    const gainNode = this.ctx.createGain();
+    const oscillatorNode = this.ctx.createOscillator();
+    const now = this.ctx.currentTime;
+
+    oscillatorNode.frequency.setValueAtTime(freq, now); // value in hertz
+    oscillatorNode.type = "square";
+
+    oscillatorNode.connect(gainNode);
+    gainNode.connect(this.ctx.destination);
+    oscillatorNode.start(now);
+
+    gainNode.gain.cancelScheduledValues( now );
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime((velocity / 200), now + 0.1);
+
+    if (this.notes[freq] === undefined)
+    {
+      this.notes[freq] = new Array();
     }
 
-    const oscillator = this.ctx.createOscillator();
+    console.log(this.notes[freq])
+    // Pushes all nodes
+    this.notes[freq].push({ oscillatorNode, gainNode });
+  }
 
-    oscillator.type = "square";
-    oscillator.frequency.setValueAtTime(notes[note][scale], this.ctx.currentTime); // value in hertz
-    oscillator.connect(this.ctx.destination);
-    oscillator.start(this.ctx.currentTime);
+  async stopNote({ note, octave, frequency }: any)
+  {
+    const freq = this.parseFrequency({ note, octave, frequency });
+    const now = this.ctx.currentTime;
+
+    if (this.notes[freq] === undefined)
+    {
+      return;
+    }
     
-    return oscillator;
+    for (let note of this.notes[freq])
+    {
+      note.gainNode.gain.cancelScheduledValues( now );
+      note.gainNode.gain.setValueAtTime(note.gainNode.gain.value, now);
+      note.gainNode.gain.linearRampToValueAtTime(0 , now + 1);
+      note.oscillatorNode.stop(now + 1);
+    }
+    
+
+    delete this.notes[freq];
   }
 }
 
 class Flare {
-  ctx : AudioContext;
-  tracks : Track[];
-  channels : Channel[];
-  timeSignature : any;
-  paused : boolean;
-  time : number;
-  bpm : number;
+  ctx: AudioContext;
+  tracks: Track[];
+  channels: Channel[];
+  timeSignature: any;
+  paused: boolean;
+  time: number;
+  bpm: number;
 
   constructor() {
     this.ctx = new AudioContext();

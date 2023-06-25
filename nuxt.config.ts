@@ -3,9 +3,16 @@ export default defineNuxtConfig({
   devtools: {
     enabled: true
   },
+  build: {
+    transpile: ['vue3-pixi']
+  },
   modules: [
     'nuxt-electron', '@pinia-plugin-persistedstate/nuxt', '@pinia/nuxt', '@nuxthq/ui'
   ],
+  // plugins: [
+  //   { src: '~/plugins/pixijs', mode: 'client', ssr: false}
+  // ],
+  
   electron: {
     build: [
       { // Main-Process entry file of the Electron App.
